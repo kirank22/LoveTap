@@ -7,9 +7,16 @@
 
 import Foundation
 
+enum TapType: String, Codable {
+    case quickTap
+    case longTap
+    case scheduledTap
+}
+
 struct Tap {
-    var text = "Hello, World!"
-    var pairId: String?
-    var senderId: String?
-    var createdAt: Date?
+    let id: String // Using String to align with CKRecord.ID.recordName
+    let type: TapType
+    let pairId: String
+    let senderId: String
+    let createdAt: Date
 }

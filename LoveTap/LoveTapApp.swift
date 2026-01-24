@@ -11,7 +11,7 @@ import SwiftUI
 struct LoveTapApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
         }
     }
 }

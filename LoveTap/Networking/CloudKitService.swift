@@ -32,30 +32,46 @@ class CloudKitService {
     private enum PairKeys {
         static let userAId = "userAId"
         static let userBId = "userBId"
-        // Optional: a pairing code if you store one in CloudKit
         static let code = "code"
     }
 
     private enum TapKeys {
-        static let text = "text"
+        static let type = "type" // Changed from 'text'
         static let pairId = "pairId"
         static let senderId = "senderId"
         static let createdAt = "createdAt"
     }
     
     func createOrFetchUser() async throws -> UserProfile {
-        // TODO: Implement CloudKit logic to create or fetch the current user profile
-        // Suggested approach:
-        // - Resolve the current user's identity and a stable record ID
-        // - Try to fetch a `UserProfile` CKRecord by that ID
-        // - If not found, create a new record with keys: name, email, avatar
-        // - Map CKRecord to `UserProfile` (id = recordID.recordName)
-        
-        throw NSError(domain: "NotImplemented", code: 0, userInfo: nil)
+        let userRecordID = try await container.userRecordID()
+
+        do {
+            let userRecord = try await database.record(for: userRecordID)
+            guard let userProfile = mapUser(from: userRecord) else {
+                throw NSError(domain: "CloudKitService", code: 10, userInfo: [NSLocalizedDescriptionKey: "Fetched user record but failed to map."])
+            }
+            return userProfile
+        } catch let error as CKError where error.code == .unknownItem {
+            let identity = try await container.userIdentity(forUserRecordID: userRecordID)
+            let name = identity?.nameComponents.flatMap(PersonNameComponentsFormatter().string) ?? "Anonymous"
+            let email = identity?.lookupInfo?.emailAddress ?? ""
+
+            let newUserRecord = CKRecord(recordType: RecordType.userProfile, recordID: userRecordID)
+            newUserRecord[UserKeys.name] = name as CKRecordValue
+            newUserRecord[UserKeys.email] = email as CKRecordValue
+            newUserRecord[UserKeys.avatar] = "" as CKRecordValue
+
+            let savedRecord = try await database.save(newUserRecord)
+            
+            guard let userProfile = mapUser(from: savedRecord) else {
+                 throw NSError(domain: "CloudKitService", code: 11, userInfo: [NSLocalizedDescriptionKey: "Created and saved user record but failed to map."])
+            }
+            return userProfile
+        }
     }
     
     func createPair(with code: String) async throws -> Pair {
-        let currentUserId = try await currentUserRecordName()
+        let currentUserId = try await container.userRecordID().recordName
 
         let pairRecord = CKRecord(recordType: RecordType.pair)
         pairRecord[PairKeys.userAId] = currentUserId as CKRecordValue
@@ -73,43 +89,44 @@ class CloudKitService {
         return pair
     }
     
-    func joinPair(with code: String) async throws -> Pair? {
-        guard let url = URL(string: code) else { return nil }
-
-        // 1) Fetch share metadata for URL
-        let metadata = try await fetchShareMetadata(for: url)
-
-        // 2) Accept the share
-        try await acceptShare(metadata)
-
-        // 3) Fetch the root record (Pair) from the shared database
-        let record = try await fetchRecord(in: sharedDatabase, id: metadata.rootRecordID)
-        return mapPair(from: record)
+    func joinPair(with shareURL: URL) async throws -> Pair {
+        let metadata = try await container.shareMetadata(for: shareURL)
+        _ = try await container.accept(metadata)
+        let record = try await sharedDatabase.record(for: metadata.rootRecordID)
+        
+        guard let pair = mapPair(from: record) else {
+            throw NSError(domain: "CloudKitService", code: 12, userInfo: [NSLocalizedDescriptionKey: "Failed to map joined Pair record."])
+        }
+        return pair
     }
     
     func fetchPair(with id: String) async throws -> Pair? {
-        // TODO: Fetch a Pair by id (record name)
-        // Suggested approach:
-        // - First try to fetch from the shared database (if participating in a share)
-        // - If not found and you are the owner, also try the private database
-        // - Map to `Pair` or return nil if not found
+        let recordID = CKRecord.ID(recordName: id)
         
-        throw NSError(domain: "NotImplemented", code: 0, userInfo: nil)
+        // Asynchronously try fetching from both databases
+        async let sharedRecord = try? sharedDatabase.record(for: recordID)
+        async let privateRecord = try? database.record(for: recordID)
+        
+        if let record = await sharedRecord, let pair = mapPair(from: record) {
+            return pair
+        }
+        
+        if let record = await privateRecord, let pair = mapPair(from: record) {
+            return pair
+        }
+        
+        return nil
     }
     
     func sendTap(to pairID: String, tap: Tap) async throws {
         let record = CKRecord(recordType: RecordType.tap)
-        record[TapKeys.text] = tap.text as CKRecordValue?
+        record[TapKeys.type] = tap.type.rawValue as CKRecordValue
         record[TapKeys.pairId] = pairID as CKRecordValue
-        record[TapKeys.senderId] = tap.senderId as CKRecordValue?
-        record[TapKeys.createdAt] = (tap.createdAt ?? Date()) as CKRecordValue
+        record[TapKeys.senderId] = tap.senderId as CKRecordValue
+        record[TapKeys.createdAt] = tap.createdAt as CKRecordValue
 
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            sharedDatabase.save(record) { _, error in
-                if let error = error { return continuation.resume(throwing: error) }
-                continuation.resume()
-            }
-        }
+        // Modern async/await version
+        _ = try await sharedDatabase.save(record)
     }
     
     func fetchRecentTaps(for pairID: String) async throws -> [Tap] {
@@ -117,20 +134,11 @@ class CloudKitService {
         let query = CKQuery(recordType: RecordType.tap, predicate: predicate)
         query.sortDescriptors = [NSSortDescriptor(key: TapKeys.createdAt, ascending: false)]
 
-        var results: [Tap] = []
-
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[Tap], Error>) in
-            let operation = CKQueryOperation(query: query)
-            operation.recordFetchedBlock = { record in
-                let tap = self.mapTap(from: record)
-                results.append(tap)
-            }
-            operation.queryCompletionBlock = { _, error in
-                if let error = error { return continuation.resume(throwing: error) }
-                continuation.resume(returning: results)
-            }
-            sharedDatabase.add(operation)
-        }
+        // Modern async/await version
+        let (matchResults, _) = try await sharedDatabase.records(matching: query)
+        let records = matchResults.compactMap { try? $0.1.get() }
+        
+        return records.compactMap(mapTap)
     }
     
     func subscribeToTaps(for pairID: String) async throws {
@@ -143,12 +151,8 @@ class CloudKitService {
         notificationInfo.shouldSendContentAvailable = true
         subscription.notificationInfo = notificationInfo
 
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            sharedDatabase.save(subscription) { _, error in
-                if let error = error { return continuation.resume(throwing: error) }
-                continuation.resume()
-            }
-        }
+        // Modern async/await version
+        _ = try await sharedDatabase.save(subscription)
     }
     
     // MARK: - Mapping
@@ -169,86 +173,55 @@ class CloudKitService {
         return Pair(id: id, userAId: userAId, userBId: userBId)
     }
 
-    private func mapTap(from record: CKRecord) -> Tap {
-        var tap = Tap()
-        tap.text = record[TapKeys.text] as? String ?? ""
-        tap.pairId = record[TapKeys.pairId] as? String
-        tap.senderId = record[TapKeys.senderId] as? String
-        tap.createdAt = record[TapKeys.createdAt] as? Date
-        return tap
-    }
-
-    // MARK: - Helpers (Async wrappers)
-    private func currentUserRecordName() async throws -> String {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
-            container.fetchUserRecordID { recordID, error in
-                if let error = error { return continuation.resume(throwing: error) }
-                guard let recordID = recordID else {
-                    return continuation.resume(throwing: NSError(domain: "CloudKitService", code: 2, userInfo: [NSLocalizedDescriptionKey: "No user record ID"]))
-                }
-                continuation.resume(returning: recordID.recordName)
-            }
+    private func mapTap(from record: CKRecord) -> Tap? {
+        let id = record.recordID.recordName
+        guard let typeString = record[TapKeys.type] as? String,
+              let type = TapType(rawValue: typeString),
+              let pairId = record[TapKeys.pairId] as? String,
+              let senderId = record[TapKeys.senderId] as? String,
+              let createdAt = record[TapKeys.createdAt] as? Date else {
+            return nil
         }
+        return Tap(id: id, type: type, pairId: pairId, senderId: senderId, createdAt: createdAt)
     }
 
+    func createSharedPairReturningShareURL(code: String) async throws -> (pair: Pair, shareURL: URL) {
+        let currentUserId = try await container.userRecordID().recordName
+
+        let pairRecord = CKRecord(recordType: RecordType.pair)
+        pairRecord[PairKeys.userAId] = currentUserId as CKRecordValue
+        pairRecord[PairKeys.userBId] = "" as CKRecordValue
+        pairRecord[PairKeys.code] = code as CKRecordValue
+
+        let share = CKShare(rootRecord: pairRecord)
+        share.publicPermission = .readWrite
+        share[CKShare.SystemFieldKey.title] = "LoveTap Pair" as CKRecordValue
+
+        _ = try await database.modifyRecords(saving: [pairRecord, share], deleting: [])
+
+        guard let pair = mapPair(from: pairRecord), let url = share.url else {
+            throw NSError(domain: "CloudKitService", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to map pair or get share URL."])
+        }
+        return (pair, url)
+    }
+
+    // MARK: - Helpers (Now replaced by modern APIs where possible)
     private func modifyRecords(in database: CKDatabase, saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID]) async throws {
+        // This helper is still useful as a wrapper around the operation
+        let op = CKModifyRecordsOperation(recordsToSave: recordsToSave, recordIDsToDelete: recordIDsToDelete)
+        op.savePolicy = .allKeys
+        
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let op = CKModifyRecordsOperation(recordsToSave: recordsToSave, recordIDsToDelete: recordIDsToDelete)
-            op.savePolicy = .allKeys
-            op.modifyRecordsCompletionBlock = { _, _, error in
-                if let error = error { return continuation.resume(throwing: error) }
-                continuation.resume()
+            op.modifyRecordsResultBlock = { result in
+                switch result {
+                case .success:
+                    continuation.resume()
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
             }
             database.add(op)
         }
     }
-
-    private func fetchRecord(in database: CKDatabase, id: CKRecord.ID) async throws -> CKRecord {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKRecord, Error>) in
-            database.fetch(withRecordID: id) { record, error in
-                if let error = error { return continuation.resume(throwing: error) }
-                guard let record = record else {
-                    return continuation.resume(throwing: NSError(domain: "CloudKitService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Record not found"]))
-                }
-                continuation.resume(returning: record)
-            }
-        }
-    }
-
-    private func fetchShareMetadata(for url: URL) async throws -> CKShare.Metadata {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKShare.Metadata, Error>) in
-            let op = CKFetchShareMetadataOperation(shareURLs: [url])
-            var captured: CKShare.Metadata?
-            var capturedError: Error?
-            op.perShareMetadataBlock = { _, metadata, error in
-                if let error = error { capturedError = error; return }
-                captured = metadata
-            }
-            op.fetchShareMetadataResultBlock = { result in
-                switch result {
-                case .failure(let error): continuation.resume(throwing: error)
-                case .success:
-                    if let capturedError = capturedError { return continuation.resume(throwing: capturedError) }
-                    guard let captured = captured else {
-                        return continuation.resume(throwing: NSError(domain: "CloudKitService", code: 4, userInfo: [NSLocalizedDescriptionKey: "No share metadata found"]))
-                    }
-                    continuation.resume(returning: captured)
-                }
-            }
-            container.add(op)
-        }
-    }
-
-    private func acceptShare(_ metadata: CKShare.Metadata) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let op = CKAcceptSharesOperation(shareMetadatas: [metadata])
-            op.acceptSharesResultBlock = { result in
-                switch result {
-                case .failure(let error): continuation.resume(throwing: error)
-                case .success: continuation.resume()
-                }
-            }
-            container.add(op)
-        }
-    }
 }
+

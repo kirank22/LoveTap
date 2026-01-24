@@ -6,8 +6,37 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0F7B38E32F24782C00B46CBE /* LoveTapWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0F7B38D92F24782B00B46CBE /* LoveTapWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0F7B38E12F24782C00B46CBE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0F73980D2E936D9B00517C6B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0F7B38D82F24782B00B46CBE;
+			remoteInfo = "LoveTapWatch Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0F7B38E72F24782C00B46CBE /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				0F7B38E32F24782C00B46CBE /* LoveTapWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0F7398152E936D9B00517C6B /* LoveTap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LoveTap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0F7B38D92F24782B00B46CBE /* LoveTapWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "LoveTapWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +45,22 @@
 			path = LoveTap;
 			sourceTree = "<group>";
 		};
+		0F7B38DA2F24782B00B46CBE /* LoveTapWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "LoveTapWatch Watch App";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		0F7398122E936D9B00517C6B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0F7B38D62F24782B00B46CBE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				0F7398172E936D9B00517C6B /* LoveTap */,
+				0F7B38DA2F24782B00B46CBE /* LoveTapWatch Watch App */,
 				0F7398162E936D9B00517C6B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				0F7398152E936D9B00517C6B /* LoveTap.app */,
+				0F7B38D92F24782B00B46CBE /* LoveTapWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,10 +98,12 @@
 				0F7398112E936D9B00517C6B /* Sources */,
 				0F7398122E936D9B00517C6B /* Frameworks */,
 				0F7398132E936D9B00517C6B /* Resources */,
+				0F7B38E72F24782C00B46CBE /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0F7B38E22F24782C00B46CBE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0F7398172E936D9B00517C6B /* LoveTap */,
@@ -70,6 +115,28 @@
 			productReference = 0F7398152E936D9B00517C6B /* LoveTap.app */;
 			productType = "com.apple.product-type.application";
 		};
+		0F7B38D82F24782B00B46CBE /* LoveTapWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0F7B38E42F24782C00B46CBE /* Build configuration list for PBXNativeTarget "LoveTapWatch Watch App" */;
+			buildPhases = (
+				0F7B38D52F24782B00B46CBE /* Sources */,
+				0F7B38D62F24782B00B46CBE /* Frameworks */,
+				0F7B38D72F24782B00B46CBE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0F7B38DA2F24782B00B46CBE /* LoveTapWatch Watch App */,
+			);
+			name = "LoveTapWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "LoveTapWatch Watch App";
+			productReference = 0F7B38D92F24782B00B46CBE /* LoveTapWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -77,11 +144,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					0F7398142E936D9B00517C6B = {
 						CreatedOnToolsVersion = 26.0.1;
+					};
+					0F7B38D82F24782B00B46CBE = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -100,12 +170,20 @@
 			projectRoot = "";
 			targets = (
 				0F7398142E936D9B00517C6B /* LoveTap */,
+				0F7B38D82F24782B00B46CBE /* LoveTapWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		0F7398132E936D9B00517C6B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0F7B38D72F24782B00B46CBE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +200,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0F7B38D52F24782B00B46CBE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0F7B38E22F24782C00B46CBE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0F7B38D82F24782B00B46CBE /* LoveTapWatch Watch App */;
+			targetProxy = 0F7B38E12F24782C00B46CBE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0F73981E2E936D9D00517C6B /* Debug */ = {
@@ -310,6 +403,72 @@
 			};
 			name = Release;
 		};
+		0F7B38E52F24782C00B46CBE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H9W4ZJH4J9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LoveTapWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.kirank22.LoveTap;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kirank22.LoveTap.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		0F7B38E62F24782C00B46CBE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H9W4ZJH4J9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LoveTapWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.kirank22.LoveTap;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kirank22.LoveTap.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,6 +486,15 @@
 			buildConfigurations = (
 				0F7398212E936D9D00517C6B /* Debug */,
 				0F7398222E936D9D00517C6B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0F7B38E42F24782C00B46CBE /* Build configuration list for PBXNativeTarget "LoveTapWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0F7B38E52F24782C00B46CBE /* Debug */,
+				0F7B38E62F24782C00B46CBE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,8 +1,8 @@
 //
 //  ContentView.swift
-//  LoveTap
+//  LoveTapWatch Watch App
 //
-//  Created by Kiran Kothapalli on 10/5/25.
+//  Created by Kiran Kothapalli on 1/23/26.
 //
 
 import SwiftUI
