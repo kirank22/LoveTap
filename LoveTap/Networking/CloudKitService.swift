@@ -11,18 +11,19 @@ import CloudKit
 class CloudKitService {
     
     // MARK: - CloudKit
-    private let container = CKContainer.default()
-    private let database = CKContainer.default().privateCloudDatabase
-    private let sharedDatabase = CKContainer.default().sharedCloudDatabase
+    // NOTE: CloudKit functionality is temporarily disabled for UI development.
+    // The service methods below have been replaced with mock implementations
+    // that return sample data, allowing the UI to run without a real backend.
+    // To re-enable CloudKit, revert the changes in this file.
 
-    // MARK: - Record Types
+    // MARK: - Record Types (Unused in mock implementation)
     private enum RecordType {
         static let userProfile = "UserProfile"
         static let pair = "Pair"
         static let tap = "Tap"
     }
 
-    // MARK: - Keys
+    // MARK: - Keys (Unused in mock implementation)
     private enum UserKeys {
         static let name = "name"
         static let email = "email"
@@ -42,120 +43,58 @@ class CloudKitService {
         static let createdAt = "createdAt"
     }
     
+    // MARK: - Mock Service Methods
+    
     func createOrFetchUser() async throws -> UserProfile {
-        let userRecordID = try await container.userRecordID()
-
-        do {
-            let userRecord = try await database.record(for: userRecordID)
-            guard let userProfile = mapUser(from: userRecord) else {
-                throw NSError(domain: "CloudKitService", code: 10, userInfo: [NSLocalizedDescriptionKey: "Fetched user record but failed to map."])
-            }
-            return userProfile
-        } catch let error as CKError where error.code == .unknownItem {
-            let identity = try await container.userIdentity(forUserRecordID: userRecordID)
-            let name = identity?.nameComponents.flatMap(PersonNameComponentsFormatter().string) ?? "Anonymous"
-            let email = identity?.lookupInfo?.emailAddress ?? ""
-
-            let newUserRecord = CKRecord(recordType: RecordType.userProfile, recordID: userRecordID)
-            newUserRecord[UserKeys.name] = name as CKRecordValue
-            newUserRecord[UserKeys.email] = email as CKRecordValue
-            newUserRecord[UserKeys.avatar] = "" as CKRecordValue
-
-            let savedRecord = try await database.save(newUserRecord)
-            
-            guard let userProfile = mapUser(from: savedRecord) else {
-                 throw NSError(domain: "CloudKitService", code: 11, userInfo: [NSLocalizedDescriptionKey: "Created and saved user record but failed to map."])
-            }
-            return userProfile
-        }
+        print("CloudKitService: Using MOCK createOrFetchUser()")
+        // Simulate a short network delay to mimic loading.
+        try? await Task.sleep(for: .seconds(0.5))
+        return UserProfile(id: "mockUserID", name: "You", email: "user@example.com", avatar: "")
     }
     
     func createPair(with code: String) async throws -> Pair {
-        let currentUserId = try await container.userRecordID().recordName
-
-        let pairRecord = CKRecord(recordType: RecordType.pair)
-        pairRecord[PairKeys.userAId] = currentUserId as CKRecordValue
-        pairRecord[PairKeys.userBId] = "" as CKRecordValue
-        pairRecord[PairKeys.code] = code as CKRecordValue
-
-        let share = CKShare(rootRecord: pairRecord)
-        share[CKShare.SystemFieldKey.title] = "LoveTap Pair" as CKRecordValue
-
-        try await modifyRecords(in: database, saving: [pairRecord, share], deleting: [])
-
-        guard let pair = mapPair(from: pairRecord) else {
-            throw NSError(domain: "CloudKitService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to map saved Pair record."])
-        }
-        return pair
+        print("CloudKitService: Using MOCK createPair()")
+        return Pair(id: "mockPairID", userAId: "mockUserID", userBId: "")
     }
     
     func joinPair(with shareURL: URL) async throws -> Pair {
-        let metadata = try await container.shareMetadata(for: shareURL)
-        _ = try await container.accept(metadata)
-        let record = try await sharedDatabase.record(for: metadata.rootRecordID)
-        
-        guard let pair = mapPair(from: record) else {
-            throw NSError(domain: "CloudKitService", code: 12, userInfo: [NSLocalizedDescriptionKey: "Failed to map joined Pair record."])
-        }
-        return pair
+        print("CloudKitService: Using MOCK joinPair()")
+        // Simulate joining a pair successfully.
+        return Pair(id: "mockPairID", userAId: "partnerID", userBId: "mockUserID")
     }
     
     func fetchPair(with id: String) async throws -> Pair? {
-        let recordID = CKRecord.ID(recordName: id)
-        
-        // Asynchronously try fetching from both databases
-        async let sharedRecord = try? sharedDatabase.record(for: recordID)
-        async let privateRecord = try? database.record(for: recordID)
-        
-        if let record = await sharedRecord, let pair = mapPair(from: record) {
-            return pair
-        }
-        
-        if let record = await privateRecord, let pair = mapPair(from: record) {
-            return pair
-        }
-        
-        return nil
+        print("CloudKitService: Using MOCK fetchPair()")
+        // To test the view for a PAIRED user (TapView), return a mock Pair object.
+        // To test the view for an UNPAIRED user (PairingView), return nil.
+        return Pair(id: "mockPairID", userAId: "mockUserID", userBId: "partnerID")
     }
     
     func sendTap(to pairID: String, tap: Tap) async throws {
-        let record = CKRecord(recordType: RecordType.tap)
-        record[TapKeys.type] = tap.type.rawValue as CKRecordValue
-        record[TapKeys.pairId] = pairID as CKRecordValue
-        record[TapKeys.senderId] = tap.senderId as CKRecordValue
-        record[TapKeys.createdAt] = tap.createdAt as CKRecordValue
-
-        // Modern async/await version
-        _ = try await sharedDatabase.save(record)
+        print("CloudKitService: Using MOCK sendTap() with type: \(tap.type.rawValue)")
+        // This function does nothing in the mock implementation.
     }
     
     func fetchRecentTaps(for pairID: String) async throws -> [Tap] {
-        let predicate = NSPredicate(format: "%K == %@", TapKeys.pairId, pairID)
-        let query = CKQuery(recordType: RecordType.tap, predicate: predicate)
-        query.sortDescriptors = [NSSortDescriptor(key: TapKeys.createdAt, ascending: false)]
-
-        // Modern async/await version
-        let (matchResults, _) = try await sharedDatabase.records(matching: query)
-        let records = matchResults.compactMap { try? $0.1.get() }
-        
-        return records.compactMap(mapTap)
+        print("CloudKitService: Using MOCK fetchRecentTaps()")
+        return []
     }
     
     func subscribeToTaps(for pairID: String) async throws {
-        let predicate = NSPredicate(format: "%K == %@", TapKeys.pairId, pairID)
-        let subscription = CKQuerySubscription(recordType: RecordType.tap,
-                                               predicate: predicate,
-                                               subscriptionID: "tap-subscription-\(pairID)",
-                                               options: [.firesOnRecordCreation])
-        let notificationInfo = CKSubscription.NotificationInfo()
-        notificationInfo.shouldSendContentAvailable = true
-        subscription.notificationInfo = notificationInfo
-
-        // Modern async/await version
-        _ = try await sharedDatabase.save(subscription)
+        print("CloudKitService: Using MOCK subscribeToTaps()")
+        // This function does nothing in the mock implementation.
     }
     
-    // MARK: - Mapping
+    func createSharedPairReturningShareURL(code: String) async throws -> (pair: Pair, shareURL: URL) {
+        print("CloudKitService: Using MOCK createSharedPairReturningShareURL()")
+        let mockPair = Pair(id: "mockPairID", userAId: "mockUserID", userBId: "")
+        // Provide a dummy URL for the share sheet to display.
+        let mockURL = URL(string: "https://www.apple.com")!
+        return (mockPair, mockURL)
+    }
+    
+    // MARK: - Original CloudKit Helpers (Unused in mock implementation)
+    
     private func mapUser(from record: CKRecord) -> UserProfile? {
         let id = record.recordID.recordName
         guard let name = record[UserKeys.name] as? String else { return nil }
@@ -185,27 +124,6 @@ class CloudKitService {
         return Tap(id: id, type: type, pairId: pairId, senderId: senderId, createdAt: createdAt)
     }
 
-    func createSharedPairReturningShareURL(code: String) async throws -> (pair: Pair, shareURL: URL) {
-        let currentUserId = try await container.userRecordID().recordName
-
-        let pairRecord = CKRecord(recordType: RecordType.pair)
-        pairRecord[PairKeys.userAId] = currentUserId as CKRecordValue
-        pairRecord[PairKeys.userBId] = "" as CKRecordValue
-        pairRecord[PairKeys.code] = code as CKRecordValue
-
-        let share = CKShare(rootRecord: pairRecord)
-        share.publicPermission = .readWrite
-        share[CKShare.SystemFieldKey.title] = "LoveTap Pair" as CKRecordValue
-
-        _ = try await database.modifyRecords(saving: [pairRecord, share], deleting: [])
-
-        guard let pair = mapPair(from: pairRecord), let url = share.url else {
-            throw NSError(domain: "CloudKitService", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to map pair or get share URL."])
-        }
-        return (pair, url)
-    }
-
-    // MARK: - Helpers (Now replaced by modern APIs where possible)
     private func modifyRecords(in database: CKDatabase, saving recordsToSave: [CKRecord], deleting recordIDsToDelete: [CKRecord.ID]) async throws {
         // This helper is still useful as a wrapper around the operation
         let op = CKModifyRecordsOperation(recordsToSave: recordsToSave, recordIDsToDelete: recordIDsToDelete)
@@ -220,7 +138,6 @@ class CloudKitService {
                     continuation.resume(throwing: error)
                 }
             }
-            database.add(op)
         }
     }
 }
