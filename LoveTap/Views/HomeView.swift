@@ -13,16 +13,23 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            // Background Gradient
-            LinearGradient(
-                colors: [.purple.opacity(0.4), .blue.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            TabView {
+                Tab("Received", systemImage: "tray.and.arrow.down.fill") {
+                    mainContentView
+                }
+                .badge(2)
 
-            // Main content view switcher
-            mainContentView
+
+                Tab("Home", systemImage: "house.fill") {
+                    mainContentView
+                }
+
+
+                Tab("Account", systemImage: "person.crop.circle.fill") {
+                    mainContentView
+                }
+                .badge("!")
+            }
         }
         .onAppear {
             Task {
@@ -47,6 +54,7 @@ struct HomeView: View {
         }
     }
 
+    // Main content view switcher
     @ViewBuilder
     private var mainContentView: some View {
         if viewModel.isLoading {
